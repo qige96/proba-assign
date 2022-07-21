@@ -1,19 +1,16 @@
 # proba-assign
 
-
-
+Converting uncertain scores into probabilities.
 
 
 ## How to use
 
 
 ### Installation
-
-
-
+Download the project code and relevant data, and then set up the environment.
 
 ```shell
-$ unzip D3.3.zip
+$ git clone https://github.com/qige96/proba-assign.git
 $ pipenv --python 3.9     # (I use 3.9 in my local machine, but should be OK with 3.6+)
 $ pipenv install     # install all required third-party packages
 $ pipenv shell      # enter the virtual environment
@@ -29,25 +26,27 @@ import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # File path of training data for training calibration model.
-TRAIN_DATA_DIR = os.path.join(BASE_DIR, r'data-inputs/freebase13')
+TRAIN_DATA_DIR = os.path.join(BASE_DIR, r'inputs/train.dat')
 
 # File path of triples that need to assign probabilities.
-PROD_DATA_DIR = os.path.join(BASE_DIR, r'inputs/sample_and_score.pt')
+PROD_DATA_DIR = os.path.join(BASE_DIR, r'inputs/prod.dat')
 
 # File path of calibration model with tuned parameters.
 CALIBRATION_MODEL_DIR = os.path.join(BASE_DIR, r'inputs/cal.model')
 
+# File path of the probabilities knowledge base.
+PKB_DIR = os.path.join(BASE_DIR, r'outputs/pkb.dat')
+
 # File path of evidence used to update probabilistic knowledge
 EVIDENCE_STREAM_DIR = os.path.join(BASE_DIR, r'inputs/synthetic_evidence.dat')
 
-# File path of the probabilities knowledge base, where the program will dump the PKB.
-PKB_DIR = os.path.join(BASE_DIR, r'outputs/pkb.dat')
+
 ```
 
 ### Usage
 Before being able to assign probabilities, a probability calibrator must be trained. This step will require some training data.
 ```shell
-$ python train_cal.py
+$ python train_cal.py -i inputs/train.dat -o inputs/cal.model
 ```
 
 This command will train a calibration model that could be used to transform scores into probabilities. It require training data in the format of `<head, relation, tail, score, label>`. For example:
@@ -71,7 +70,7 @@ billy_sanders   nationality     australia       -1.5188908576965332     1
 
 To assign initial probabilities, use this command
 ```shell
-$ python assign.py    
+$ python assign.py -i inputs/prod.dat -o outputs/pkb.dat -m inputs/cal.model  
 ```
 
 This command will convert the scores into probabilities. The required data format is `<head, relation, tail, score>`. For example:
@@ -108,18 +107,36 @@ Actually, the *probability* and the *strength* together form a Beta distribution
 
 To update probabilities with uncertain evidence, use this command
 ```shell
-$ python update.py   
+$ python update.py -e inputs/synthetic_evidence.dat -d outputs/pkb.dat -o outputs/pkb.dat  
 ```
 
 This command will integrate the information of the evidence into the existing knowledge, by adding new probabilistic triples, or updating the probability value of existing triples. The required data format is `<head, relation, tail, probability>`, the *probability* of which could be obtained by `assign.py`. An example input is:
 
 ```
-
+bill_owen	profession	actor	0.134
+mother_cabrini	nationality	italy	0.498
+bill_haley	nationality	united_states	0.107
+david_fasold	profession	sailor	0.266
+norbert_poehlke	gender	female	0.232
+gustav_stresemann	gender	female	0.978
+airey_neave	gender	male	0.349
+billy_preston	profession	political_prisoner	0.39
+rosemary_clooney	nationality	united_states	0.698
+thomas_kettle	profession	barrister	0.74
 ```
 
 and the example output is:
 
 ```
-
+umberto_i_of_italy	cause_of_death	tyrannicide	0.692	5.0
+umberto_i_of_italy	cause_of_death	cerebral_aneurysm	0.556	6.0
+john_glenn_beall_jr	nationality	united_states	0.571	3.0
+john_glenn_beall_jr	nationality	ancient_greece	0.43	2.0
+john_atkinson_grimshaw	gender	male	0.321	7.0
+john_atkinson_grimshaw	gender	female	0.673	4.0
+hardinge_giffard_1st_earl_of_halsbury	gender	male	0.518	5.0
+hardinge_giffard_1st_earl_of_halsbury	gender	female	0.559	5.0
+mike_von_erich	nationality	united_states	0.372	5.0
+mike_von_erich	nationality	serbia	0.444	4.0
 ```
 

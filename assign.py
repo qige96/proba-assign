@@ -11,7 +11,7 @@ import pkb
 import configs
 import utils
 
-logging.basicConfig(encoding='utf-8', level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 def get_cli_args():
     '''Get arguments from command line interface'''
